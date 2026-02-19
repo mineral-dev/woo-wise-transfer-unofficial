@@ -1,0 +1,48 @@
+/**
+ * Wise Transfer - Admin Settings Styles
+ */
+
+/* Accent Bar */
+.wise-admin-accent-bar {
+	height: 4px;
+	background: #00B9A5;
+	border-radius: 4px 4px 0 0;
+	margin-bottom: 0;
+}
+
+/* Header */
+.wise-admin-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 16px 24px;
+	background: #F5F7F4;
+	border-bottom: 1px solid #E0E6E0;
+}
+
+.wise-admin-logo {
+	width: 120px;
+	height: auto;
+}
+
+.wise-admin-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #1A1A1A;
+	margin: 0;
+	padding: 0;
+}
+
+/* Admin receipt display on order page */
+.wise-admin-receipt {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #E0E6E0;
+}
+
+.wise-admin-receipt h3 {
+	font-size: 14px;
+	font-weight: 600;
+	color: #1A1A1A;
+	margin: 0 0 12px;
+}

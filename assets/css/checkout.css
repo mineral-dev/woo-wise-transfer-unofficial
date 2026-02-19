@@ -1,0 +1,444 @@
+/**
+ * Wise Transfer - Checkout & Thank You Page Styles
+ * Based on Wise Design System (wise.design)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   WISE DESIGN TOKENS
+   ============================================ */
+:root {
+	--wise-green-dark: #163300;
+	--wise-green-accent: #9FE870;
+	--wise-green-accent-hover: #8BD85E;
+	--wise-bg-card: #FFFFFF;
+	--wise-bg-surface: rgba(22, 51, 0, 0.08);
+	--wise-bg-upload: rgba(22, 51, 0, 0.08);
+	--wise-border: rgba(14, 15, 12, 0.12);
+	--wise-border-light: rgba(14, 15, 12, 0.12);
+	--wise-text-primary: #0E0F0C;
+	--wise-text-secondary: #454745;
+	--wise-text-tertiary: #6A6C6A;
+	--wise-error: #A8200D;
+	--wise-radius-card: 16px;
+	--wise-radius-input: 12px;
+	--wise-radius-pill: 24px;
+	--wise-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================
+   CHECKOUT - PAYMENT METHOD ICON
+   ============================================ */
+.payment_method_wise_transfer label img {
+	max-height: 16px;
+	width: auto;
+	vertical-align: middle;
+	margin-left: 0.5rem;
+	color: var(--wise-green-dark);
+}
+
+/* ============================================
+   THANK YOU PAGE - MAIN WRAPPER
+   ============================================ */
+.wise-thankyou-wrapper {
+	font-family: var(--wise-font);
+	margin: 32px 0;
+}
+
+/* ============================================
+   BANK DETAILS CARD
+   ============================================ */
+.wise-thankyou-card {
+	background: var(--wise-bg-card);
+	border: 1px solid var(--wise-border-light);
+	border-radius: var(--wise-radius-card);
+	padding: 0;
+	margin-bottom: 24px;
+	font-family: var(--wise-font);
+	overflow: hidden;
+}
+
+.wise-card-header {
+	padding: 20px 24px 16px;
+}
+
+.wise-card-logo {
+	height: 28px;
+	width: auto;
+	margin-bottom: 12px;
+}
+
+.wise-card-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--wise-green-dark);
+	margin: 0 0 8px;
+}
+
+.wise-card-subtitle {
+	font-size: 14px;
+	color: var(--wise-text-secondary);
+	line-height: 1.5;
+	margin: 0;
+}
+
+/* ============================================
+   LIST ITEMS - Table-like rows
+   ============================================ */
+.wise-details-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.wise-details-row {
+	border-top: 1px solid var(--wise-border-light);
+}
+
+.wise-details-row td {
+	padding: 16px 24px;
+	vertical-align: middle;
+}
+
+.wise-details-label {
+	font-size: 14px;
+	font-weight: 400;
+	color: var(--wise-text-secondary);
+	width: 40%;
+	white-space: nowrap;
+}
+
+.wise-details-value {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--wise-green-dark);
+	text-align: right;
+}
+
+.wise-details-value-with-copy {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+/* ============================================
+   COPY BUTTON
+   ============================================ */
+.wise-copy-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: 1px solid var(--wise-border);
+	border-radius: 8px;
+	background: var(--wise-bg-card);
+	color: var(--wise-text-secondary);
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	padding: 0;
+}
+
+.wise-copy-btn:hover {
+	border-color: var(--wise-green-dark);
+	color: var(--wise-green-dark);
+	background: var(--wise-bg-surface);
+}
+
+.wise-copy-btn.copied {
+	border-color: var(--wise-green-dark);
+	color: var(--wise-bg-card);
+	background: var(--wise-green-dark);
+}
+
+/* ============================================
+   UPLOAD SECTION
+   ============================================ */
+.wise-upload-card {
+	background: var(--wise-bg-card);
+	border: 1px solid var(--wise-border-light);
+	border-radius: var(--wise-radius-card);
+	padding: 24px;
+	margin-bottom: 24px;
+	font-family: var(--wise-font);
+}
+
+.wise-upload-card-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--wise-green-dark);
+	margin: 0 0 16px;
+}
+
+/* Upload area — matches Wise upload component */
+.wise-upload-area {
+	background: var(--wise-bg-upload);
+	border: none;
+	border-radius: var(--wise-radius-input);
+	padding: 32px 24px;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.wise-upload-area:hover {
+	background: #EDEBE5;
+}
+
+.wise-upload-area.has-error {
+	border-color: var(--wise-error);
+}
+
+.wise-upload-area.has-file {
+	background: var(--wise-bg-card);
+	border-color: var(--wise-green-dark);
+	padding: 16px 24px;
+	text-align: left;
+}
+
+/* Upload icon circle */
+.wise-upload-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border: 1.5px solid var(--wise-border);
+	border-radius: 50%;
+	margin-bottom: 16px;
+	color: var(--wise-green-dark);
+}
+
+.wise-upload-placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+}
+
+.wise-upload-label {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--wise-green-dark);
+}
+
+.wise-upload-sublabel {
+	font-size: 14px;
+	color: var(--wise-text-secondary);
+	margin-bottom: 16px;
+}
+
+/* "Or select file" pill button */
+.wise-upload-select-btn {
+	display: inline-block;
+	background: var(--wise-green-accent);
+	color: var(--wise-green-dark);
+	font-family: var(--wise-font);
+	font-size: 14px;
+	font-weight: 600;
+	padding: 10px 24px;
+	border-radius: var(--wise-radius-pill);
+	border: none;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.wise-upload-select-btn:hover {
+	background: var(--wise-green-accent-hover);
+}
+
+/* File preview in upload area */
+.wise-upload-preview {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.wise-upload-thumb {
+	width: 48px;
+	height: 48px;
+	object-fit: cover;
+	border-radius: 8px;
+	flex-shrink: 0;
+	border: 1px solid var(--wise-border-light);
+}
+
+.wise-upload-file-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	background: var(--wise-bg-surface);
+	border-radius: 8px;
+	color: var(--wise-green-dark);
+	flex-shrink: 0;
+}
+
+.wise-upload-file-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.wise-upload-filename {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--wise-green-dark);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: block;
+}
+
+.wise-upload-filetype {
+	font-size: 12px;
+	color: var(--wise-text-secondary);
+}
+
+.wise-upload-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--wise-text-secondary);
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	padding: 0;
+}
+
+.wise-upload-remove:hover {
+	background: rgba(192, 57, 43, 0.08);
+	color: var(--wise-error);
+}
+
+/* Error message */
+.wise-upload-error {
+	margin-top: 8px;
+	font-size: 13px;
+	color: var(--wise-error);
+	font-family: var(--wise-font);
+}
+
+/* ============================================
+   SUBMIT BUTTON - Wise green pill
+   ============================================ */
+.wise-submit-btn {
+	display: block;
+	width: 100%;
+	margin-top: 16px;
+	padding: 14px 24px;
+	background: var(--wise-green-accent);
+	color: var(--wise-green-dark);
+	border: none;
+	border-radius: var(--wise-radius-pill);
+	font-family: var(--wise-font);
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.wise-submit-btn:hover {
+	background: var(--wise-green-accent-hover);
+}
+
+.wise-submit-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	background: var(--wise-bg-surface);
+}
+
+/* ============================================
+   UPLOAD SUCCESS STATE
+   ============================================ */
+.wise-upload-success {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 16px 20px;
+	background: var(--wise-bg-surface);
+	border: 1px solid var(--wise-green-dark);
+	border-radius: var(--wise-radius-input);
+	font-family: var(--wise-font);
+}
+
+.wise-upload-success-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	background: var(--wise-green-dark);
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.wise-upload-success-text {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--wise-green-dark);
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+.wise-divider {
+	height: 1px;
+	background: var(--wise-border-light);
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 600px) {
+	.wise-details-table,
+	.wise-details-table tbody,
+	.wise-details-table tr,
+	.wise-details-table td {
+		display: block;
+		width: 100%;
+	}
+
+	.wise-details-row td {
+		padding: 0 20px;
+	}
+
+	.wise-details-label {
+		padding-top: 14px !important;
+		padding-bottom: 2px !important;
+		font-size: 12px;
+	}
+
+	.wise-details-value {
+		padding-top: 0 !important;
+		padding-bottom: 14px !important;
+		text-align: left;
+	}
+
+	.wise-details-value-with-copy {
+		justify-content: flex-start;
+	}
+
+	.wise-card-header {
+		padding: 16px 20px 12px;
+	}
+
+	.wise-card-title {
+		font-size: 18px;
+	}
+
+	.wise-upload-card {
+		padding: 20px;
+	}
+
+	.wise-upload-area {
+		padding: 24px 16px;
+	}
+}
