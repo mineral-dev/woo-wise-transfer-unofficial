@@ -355,18 +355,26 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 			wp_send_json_error( array( 'message' => $upload_result->get_error_message() ) );
 		}
 
+		$uploaded_at = current_time( 'mysql' );
+
 		$order->update_meta_data( '_wise_receipt_url', $upload_result['url'] );
 		$order->update_meta_data( '_wise_receipt_path', $upload_result['file'] );
 		$order->update_meta_data( '_wise_receipt_filename', sanitize_file_name( $_FILES['wise_receipt']['name'] ) );
+		$order->update_meta_data( '_wise_receipt_uploaded_at', $uploaded_at );
 		$order->add_order_note( __( 'Customer uploaded proof of payment.', 'woo-wise-transfer' ) );
 		$order->save();
 
 		// Notify admin about the uploaded receipt.
 		$this->send_receipt_notification_email( $order, $upload_result['url'] );
 
+		$safe_filename = sanitize_file_name( $_FILES['wise_receipt']['name'] );
+		$is_image      = preg_match( '/\.(jpe?g|png)$/i', $safe_filename );
+
 		wp_send_json_success( array(
-			'message'  => __( 'Receipt uploaded successfully!', 'woo-wise-transfer' ),
-			'filename' => sanitize_file_name( $_FILES['wise_receipt']['name'] ),
+			'message'     => __( 'Receipt uploaded successfully!', 'woo-wise-transfer' ),
+			'filename'    => $safe_filename,
+			'uploaded_at' => wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $uploaded_at ) ),
+			'thumb_url'   => $is_image ? $upload_result['url'] : '',
 		) );
 	}
 
@@ -730,15 +738,29 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 				</table>
 			</div>
 
-			<!-- Upload Proof of Payment -->
+			<!-- Upload Proof of Payment — Nudge -->
 			<?php if ( $receipt_url ) : ?>
+			<?php
+				$receipt_filename = $order->get_meta( '_wise_receipt_filename' );
+				$uploaded_at      = $order->get_meta( '_wise_receipt_uploaded_at' );
+				$is_image         = preg_match( '/\.(jpe?g|png)$/i', $receipt_filename );
+			?>
 			<div class="wise-upload-card">
 				<h4 class="wise-upload-card-title"><?php esc_html_e( 'Proof of Payment', 'woo-wise-transfer' ); ?></h4>
-				<div class="wise-upload-success">
-					<span class="wise-upload-success-icon">
-						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+				<div class="wise-nudge">
+					<?php if ( $is_image ) : ?>
+					<img class="wise-nudge-thumb" src="<?php echo esc_url( $receipt_url ); ?>" alt="">
+					<?php else : ?>
+					<span class="wise-nudge-icon">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
 					</span>
-					<span class="wise-upload-success-text"><?php echo esc_html( $order->get_meta( '_wise_receipt_filename' ) ); ?></span>
+					<?php endif; ?>
+					<div class="wise-nudge-body">
+						<p class="wise-nudge-title"><?php echo esc_html( $receipt_filename ); ?></p>
+						<?php if ( $uploaded_at ) : ?>
+						<p class="wise-nudge-subtitle"><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $uploaded_at ) ) ); ?></p>
+						<?php endif; ?>
+					</div>
 				</div>
 			</div>
 			<?php else : ?>
@@ -927,10 +949,17 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 						try {
 							var resp = JSON.parse(xhr.responseText);
 							if (resp.success) {
+								var d = resp.data || {};
+								var thumbHtml = d.thumb_url
+									? '<img class="wise-nudge-thumb" src="' + d.thumb_url + '" alt="">'
+									: '<span class="wise-nudge-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
 								form.outerHTML =
-									'<div class="wise-upload-success">' +
-										'<span class="wise-upload-success-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
-										'<span class="wise-upload-success-text">' + (resp.data && resp.data.filename ? resp.data.filename : '') + '</span>' +
+									'<div class="wise-nudge">' +
+										thumbHtml +
+										'<div class="wise-nudge-body">' +
+											'<p class="wise-nudge-title">' + (d.filename || '') + '</p>' +
+											(d.uploaded_at ? '<p class="wise-nudge-subtitle">' + d.uploaded_at + '</p>' : '') +
+										'</div>' +
 									'</div>';
 							} else {
 								showError((resp.data && resp.data.message) || i18n.upload_failed);

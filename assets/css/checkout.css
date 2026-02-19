@@ -356,34 +356,70 @@
 }
 
 /* ============================================
-   UPLOAD SUCCESS STATE
+   UPLOAD SUCCESS STATE — Wise Nudge style
    ============================================ */
-.wise-upload-success {
+.wise-nudge {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 16px 20px;
-	background: var(--wise-bg-surface);
-	border: 1px solid var(--wise-green-dark);
-	border-radius: var(--wise-radius-input);
+	gap: 0;
+	background: rgba(22, 51, 0, 0.06);
+	border-radius: 16px;
 	font-family: var(--wise-font);
+	overflow: hidden;
+	position: relative;
 }
 
-.wise-upload-success-icon {
+.wise-nudge-thumb {
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	flex-shrink: 0;
+	border-radius: 12px;
+	margin: 12px;
+	margin-right: 0;
+}
+
+.wise-nudge-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
-	height: 36px;
+	width: 56px;
+	height: 56px;
 	background: var(--wise-green-dark);
 	border-radius: 50%;
 	flex-shrink: 0;
+	margin: 16px;
+	margin-right: 0;
 }
 
-.wise-upload-success-text {
+.wise-nudge-icon svg {
+	width: 24px;
+	height: 24px;
+}
+
+.wise-nudge-body {
+	flex: 1;
+	min-width: 0;
+	padding: 16px;
+}
+
+.wise-nudge-title {
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--wise-green-dark);
+	line-height: 1.4;
+	margin: 0 0 2px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wise-nudge-subtitle {
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--wise-text-secondary);
+	line-height: 1.4;
+	margin: 0;
 }
 
 /* ============================================

@@ -125,11 +125,19 @@
 				contentType: false,
 				success: function (response) {
 					if (response.success) {
-						// Replace upload area with success message
+						var d = response.data || {};
+						var fname = $('<span>').text(d.filename || '').html();
+						var udate = d.uploaded_at ? $('<span>').text(d.uploaded_at).html() : '';
+						var thumbHtml = d.thumb_url
+							? '<img class="wise-nudge-thumb" src="' + $('<span>').text(d.thumb_url).html() + '" alt="">'
+							: '<span class="wise-nudge-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
 						$('#wise-upload-form').replaceWith(
-							'<div class="wise-upload-success">' +
-								'<span class="wise-upload-success-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
-								'<span class="wise-upload-success-text">' + $('<span>').text(response.data.filename).html() + '</span>' +
+							'<div class="wise-nudge">' +
+								thumbHtml +
+								'<div class="wise-nudge-body">' +
+									'<p class="wise-nudge-title">' + fname + '</p>' +
+									(udate ? '<p class="wise-nudge-subtitle">' + udate + '</p>' : '') +
+								'</div>' +
 							'</div>'
 						);
 					} else {
