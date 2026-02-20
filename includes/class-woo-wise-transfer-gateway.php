@@ -175,19 +175,114 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 				'default'     => get_option( 'admin_email' ),
 				'desc_tip'    => true,
 			),
+			'email_preview' => array(
+				'title' => __( 'Email Previews', 'woo-wise-transfer' ),
+				'type'  => 'email_preview',
+			),
 		);
 	}
 
 	/**
 	 * Custom admin options output.
+	 * Also handles email preview rendering when ?wise_preview= is set.
 	 */
 	public function admin_options() {
+		// Handle email preview requests.
+		if ( ! empty( $_GET['wise_preview'] ) ) {
+			$preview_type = sanitize_text_field( wp_unslash( $_GET['wise_preview'] ) );
+			$nonce        = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+
+			if ( wp_verify_nonce( $nonce, 'wise_email_preview' ) && in_array( $preview_type, array( 'order_placed', 'receipt_uploaded' ), true ) ) {
+				$order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
+				$data     = $this->get_sample_email_data( $preview_type, $order_id );
+
+				if ( 'order_placed' === $preview_type ) {
+					$html = $this->render_order_placed_email( $data );
+				} else {
+					$html = $this->render_receipt_uploaded_email( $data );
+				}
+
+				// Make links open in new tab (like WC preview).
+				$html = str_replace( '<a ', '<a target="_blank" ', $html );
+
+				echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Email HTML is fully escaped internally.
+				exit;
+			}
+		}
+
 		?>
 		<h2><?php esc_html_e( 'Wise Transfer (unofficial) Settings', 'woo-wise-transfer' ); ?></h2>
 		<table class="form-table">
 			<?php $this->generate_settings_html(); ?>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Generate HTML for the email_preview custom field type.
+	 *
+	 * @param string $key  Field key.
+	 * @param array  $data Field data.
+	 * @return string
+	 */
+	public function generate_email_preview_html( $key, $data ) {
+		$nonce    = wp_create_nonce( 'wise_email_preview' );
+		$base_url = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wise_transfer' );
+
+		// Fetch recent Wise Transfer orders for the dropdown.
+		$recent_orders = wc_get_orders( array(
+			'payment_method' => 'wise_transfer',
+			'limit'          => 20,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'return'         => 'ids',
+		) );
+
+		ob_start();
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc"><?php echo esc_html( $data['title'] ); ?></th>
+			<td class="forminp wise-email-preview-controls">
+				<select id="wise-preview-order">
+					<option value=""><?php esc_html_e( 'Sample data', 'woo-wise-transfer' ); ?></option>
+					<?php foreach ( $recent_orders as $oid ) : ?>
+						<?php
+						$o = wc_get_order( $oid );
+						if ( ! $o ) {
+							continue;
+						}
+						?>
+						<option value="<?php echo esc_attr( $oid ); ?>">
+							<?php
+							printf(
+								/* translators: 1: order ID, 2: customer name, 3: order total */
+								esc_html__( '#%1$s — %2$s (%3$s)', 'woo-wise-transfer' ),
+								esc_html( $oid ),
+								esc_html( $o->get_billing_first_name() . ' ' . $o->get_billing_last_name() ),
+								wp_strip_all_tags( $o->get_formatted_order_total() )
+							);
+							?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<button type="button" class="button" id="wise-preview-btn">
+					<?php esc_html_e( 'Preview', 'woo-wise-transfer' ); ?>
+				</button>
+
+				<script>
+				(function(){
+					var url = <?php echo wp_json_encode( $base_url . '&_wpnonce=' . $nonce . '&wise_preview=receipt_uploaded' ); ?>;
+					document.getElementById('wise-preview-btn').addEventListener('click', function(){
+						var orderId = document.getElementById('wise-preview-order').value;
+						var full = orderId ? url + '&order_id=' + encodeURIComponent( orderId ) : url;
+						window.open( full, '_blank' );
+					});
+				})();
+				</script>
+			</td>
+		</tr>
+		<?php
+		return ob_get_clean();
 	}
 
 	/**
@@ -432,6 +527,182 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Render the order-placed notification email HTML.
+	 *
+	 * @param array $data Email data.
+	 * @return string HTML string.
+	 */
+	private function render_order_placed_email( $data ) {
+		$font = "font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;";
+
+		$rows = array(
+			__( 'Order ID', 'woo-wise-transfer' )  => '#' . esc_html( $data['order_id'] ),
+			__( 'Date', 'woo-wise-transfer' )       => esc_html( $data['order_date'] ),
+			__( 'Customer', 'woo-wise-transfer' )   => esc_html( $data['customer'] ),
+			__( 'Email', 'woo-wise-transfer' )      => esc_html( $data['email'] ),
+			__( 'Total', 'woo-wise-transfer' )      => $data['total'],
+		);
+
+		$rows_html = '';
+		foreach ( $rows as $label => $value ) {
+			$rows_html .= '<tr><td style="padding:12px 0;border-bottom:1px solid #E0E6E0;color:#637381;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;' . $font . '">' . esc_html( $label ) . '</td>';
+			$rows_html .= '<td style="padding:12px 0;border-bottom:1px solid #E0E6E0;color:#1A1A1A;font-size:14px;font-weight:600;text-align:right;' . $font . '">' . $value . '</td></tr>';
+		}
+
+		/* translators: %s: order ID */
+		$subject = sprintf( __( 'New Wise Transfer Payment - Order #%s', 'woo-wise-transfer' ), $data['order_id'] );
+
+		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>';
+		$html .= '<body style="margin:0;padding:20px;background:#f5f7f4;' . $font . '">';
+		$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">';
+		$html .= '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">';
+
+		// Header.
+		$html .= '<tr><td style="background:#163300;padding:24px 32px;">';
+		$html .= '<h1 style="margin:0;color:#9FE870;font-size:20px;font-weight:600;' . $font . '">' . esc_html( $subject ) . '</h1>';
+		$html .= '</td></tr>';
+
+		// Body.
+		$html .= '<tr><td style="padding:32px;">';
+		$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">';
+		$html .= '<tr><td style="font-size:14px;font-weight:600;color:#1A1A1A;padding-bottom:12px;' . $font . '">' . esc_html__( 'Order Details', 'woo-wise-transfer' ) . '</td><td></td></tr>';
+		$html .= $rows_html;
+		$html .= '</table>';
+
+		// CTA button.
+		$html .= '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;"><tr><td>';
+		$html .= '<a href="' . esc_url( $data['admin_url'] ) . '" style="display:inline-block;background:#163300;color:#9FE870;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;' . $font . '">' . esc_html__( 'View Order in Dashboard', 'woo-wise-transfer' ) . '</a>';
+		$html .= '</td></tr></table>';
+
+		$html .= '</td></tr></table>';
+		$html .= '</td></tr></table></body></html>';
+
+		return $html;
+	}
+
+	/**
+	 * Render the receipt-uploaded notification email HTML.
+	 *
+	 * @param array $data Email data.
+	 * @return string HTML string.
+	 */
+	private function render_receipt_uploaded_email( $data ) {
+		$font = "font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;";
+
+		$rows = array(
+			__( 'Order ID', 'woo-wise-transfer' )  => '#' . esc_html( $data['order_id'] ),
+			__( 'Customer', 'woo-wise-transfer' )   => esc_html( $data['customer'] ),
+			__( 'Email', 'woo-wise-transfer' )      => esc_html( $data['email'] ),
+			__( 'Total', 'woo-wise-transfer' )      => $data['total'],
+		);
+
+		$rows_html = '';
+		foreach ( $rows as $label => $value ) {
+			$rows_html .= '<tr><td style="padding:12px 0;border-bottom:1px solid #E0E6E0;color:#637381;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;' . $font . '">' . esc_html( $label ) . '</td>';
+			$rows_html .= '<td style="padding:12px 0;border-bottom:1px solid #E0E6E0;color:#1A1A1A;font-size:14px;font-weight:600;text-align:right;' . $font . '">' . $value . '</td></tr>';
+		}
+
+		/* translators: %s: order ID */
+		$subject = sprintf( __( 'Payment Confirmation Received - Order #%s', 'woo-wise-transfer' ), $data['order_id'] );
+
+		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>';
+		$html .= '<body style="margin:0;padding:20px;background:#f5f7f4;' . $font . '">';
+		$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">';
+		$html .= '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">';
+
+		// Header.
+		$html .= '<tr><td style="background:#163300;padding:24px 32px;">';
+		$html .= '<h1 style="margin:0;color:#9FE870;font-size:20px;font-weight:600;' . $font . '">' . esc_html( $subject ) . '</h1>';
+		$html .= '</td></tr>';
+
+		// Body.
+		$html .= '<tr><td style="padding:32px;">';
+		$html .= '<p style="color:#454745;margin:0 0 24px;font-size:14px;line-height:1.5;' . $font . '">' . esc_html__( 'A customer has uploaded proof of payment for their order. Please review the receipt and confirm the payment.', 'woo-wise-transfer' ) . '</p>';
+		$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">';
+		$html .= '<tr><td style="font-size:14px;font-weight:600;color:#1A1A1A;padding-bottom:12px;' . $font . '">' . esc_html__( 'Order Details', 'woo-wise-transfer' ) . '</td><td></td></tr>';
+		$html .= $rows_html;
+		$html .= '</table>';
+
+		// Receipt image or PDF link — only if a real file exists.
+		$receipt_filename = isset( $data['receipt_filename'] ) ? $data['receipt_filename'] : '';
+		$is_image         = preg_match( '/\.(jpe?g|png)$/i', $receipt_filename );
+
+		if ( $receipt_filename ) {
+			$html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">';
+			$html .= '<tr><td style="font-size:14px;font-weight:600;color:#1A1A1A;padding-bottom:12px;' . $font . '">' . esc_html__( 'Uploaded Receipt', 'woo-wise-transfer' ) . '</td></tr>';
+			$html .= '<tr><td style="padding:0;">';
+
+			if ( $is_image ) {
+				$html .= '<a href="' . esc_url( $data['receipt_url'] ) . '"><img src="' . esc_url( $data['receipt_url'] ) . '" alt="' . esc_attr__( 'Payment Receipt', 'woo-wise-transfer' ) . '" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #E0E6E0;display:block;"></a>';
+			} else {
+				$html .= '<a href="' . esc_url( $data['receipt_url'] ) . '" style="display:inline-block;background:#f5f7f4;color:#163300;text-decoration:none;padding:12px 16px;border-radius:8px;border:1px solid #E0E6E0;font-size:14px;' . $font . '">';
+				$html .= '&#128196; ' . esc_html( $receipt_filename );
+				$html .= '</a>';
+			}
+
+			$html .= '</td></tr></table>';
+		}
+
+		// CTA buttons.
+		$html .= '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;"><tr>';
+		$html .= '<td style="padding-right:8px;"><a href="' . esc_url( $data['admin_url'] ) . '" style="display:inline-block;background:#163300;color:#9FE870;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;' . $font . '">' . esc_html__( 'View Order', 'woo-wise-transfer' ) . '</a></td>';
+		$html .= '<td><a href="' . esc_url( $data['receipt_url'] ) . '" style="display:inline-block;background:#9FE870;color:#163300;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;' . $font . '">' . esc_html__( 'View Receipt', 'woo-wise-transfer' ) . '</a></td>';
+		$html .= '</tr></table>';
+
+		$html .= '</td></tr></table>';
+		$html .= '</td></tr></table></body></html>';
+
+		return $html;
+	}
+
+	/**
+	 * Get email data for previews — from a real order or sample placeholders.
+	 *
+	 * @param string $type     'order_placed' or 'receipt_uploaded'.
+	 * @param int    $order_id Optional order ID to use real data.
+	 * @return array
+	 */
+	private function get_sample_email_data( $type, $order_id = 0 ) {
+		$order = $order_id ? wc_get_order( $order_id ) : null;
+
+		if ( $order && 'wise_transfer' === $order->get_payment_method() ) {
+			$data = array(
+				'order_id'   => $order->get_id(),
+				'order_date' => $order->get_date_created()->date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+				'customer'   => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+				'email'      => $order->get_billing_email(),
+				'total'      => $order->get_formatted_order_total(),
+				'admin_url'  => admin_url( 'post.php?post=' . $order->get_id() . '&action=edit' ),
+			);
+
+			if ( 'receipt_uploaded' === $type ) {
+				$receipt = $order->get_meta( '_wise_receipt_url' );
+				$data['receipt_url']      = $receipt ? $receipt : home_url( '/wp-content/uploads/wise-receipts/receipt-sample.jpg' );
+				$data['receipt_filename'] = $order->get_meta( '_wise_receipt_filename' );
+			}
+
+			return $data;
+		}
+
+		// Fallback to sample data.
+		$data = array(
+			'order_id'   => '1234',
+			'order_date' => wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+			'customer'   => 'Jane Smith',
+			'email'      => 'jane@example.com',
+			'total'      => wc_price( 149.99 ),
+			'admin_url'  => admin_url( 'post.php?post=1234&action=edit' ),
+		);
+
+		if ( 'receipt_uploaded' === $type ) {
+			$data['receipt_url']      = 'https://placehold.co/600x400/f5f7f4/163300?text=Receipt+Preview';
+			$data['receipt_filename'] = 'receipt-sample.jpg';
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Send notification email to admin.
 	 *
 	 * @param WC_Order $order Order object.
@@ -443,82 +714,21 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		$order_id   = $order->get_id();
-		$order_date = $order->get_date_created()->date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) );
-		$customer   = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-		$email      = $order->get_billing_email();
-		$total      = $order->get_formatted_order_total();
-		$admin_url  = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+		$order_id = $order->get_id();
+		$data     = array(
+			'order_id'   => $order_id,
+			'order_date' => $order->get_date_created()->date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ),
+			'customer'   => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+			'email'      => $order->get_billing_email(),
+			'total'      => $order->get_formatted_order_total(),
+			'admin_url'  => admin_url( 'post.php?post=' . $order_id . '&action=edit' ),
+		);
 
 		/* translators: %s: order ID */
 		$subject = sprintf( __( 'New Wise Transfer Payment - Order #%s', 'woo-wise-transfer' ), $order_id );
+		$message = $this->render_order_placed_email( $data );
 
-		ob_start();
-		?>
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<meta charset="UTF-8">
-			<style>
-				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7f4; margin: 0; padding: 20px; }
-				.email-wrapper { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-				.email-header { background: #00B9A5; padding: 24px 32px; }
-				.email-header h1 { color: #fff; margin: 0; font-size: 20px; font-weight: 600; }
-				.email-body { padding: 32px; }
-				.info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E0E6E0; }
-				.info-label { color: #637381; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-				.info-value { color: #1A1A1A; font-size: 14px; font-weight: 600; }
-				.btn { display: inline-block; background: #00B9A5; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 8px; }
-				.btn:hover { background: #009E8C; }
-				.section { margin-bottom: 24px; }
-				.section-title { font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 12px; }
-			</style>
-		</head>
-		<body>
-			<div class="email-wrapper">
-				<div class="email-header">
-					<h1><?php echo esc_html( $subject ); ?></h1>
-				</div>
-				<div class="email-body">
-					<div class="section">
-						<div class="section-title"><?php esc_html_e( 'Order Details', 'woo-wise-transfer' ); ?></div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Order ID', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value">#<?php echo esc_html( $order_id ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Date', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo esc_html( $order_date ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Customer', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo esc_html( $customer ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Email', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo esc_html( $email ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Total', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo wp_kses_post( $total ); ?></span>
-						</div>
-					</div>
-
-					<div class="section">
-						<div class="section-title"><?php esc_html_e( 'Admin Actions', 'woo-wise-transfer' ); ?></div>
-						<p><a href="<?php echo esc_url( $admin_url ); ?>" class="btn"><?php esc_html_e( 'View Order in Dashboard', 'woo-wise-transfer' ); ?></a></p>
-					</div>
-				</div>
-			</div>
-		</body>
-		</html>
-		<?php
-		$message = ob_get_clean();
-
-		$headers = array(
-			'Content-Type: text/html; charset=UTF-8',
-		);
-
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 		wp_mail( $to, $subject, $message, $headers );
 	}
 
@@ -535,82 +745,22 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		$order_id   = $order->get_id();
-		$customer   = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-		$email      = $order->get_billing_email();
-		$total      = $order->get_formatted_order_total();
-		$admin_url  = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+		$order_id = $order->get_id();
+		$data     = array(
+			'order_id'    => $order_id,
+			'customer'    => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+			'email'       => $order->get_billing_email(),
+			'total'       => $order->get_formatted_order_total(),
+			'admin_url'        => admin_url( 'post.php?post=' . $order_id . '&action=edit' ),
+			'receipt_url'      => $receipt_url,
+			'receipt_filename' => $order->get_meta( '_wise_receipt_filename' ),
+		);
 
 		/* translators: %s: order ID */
 		$subject = sprintf( __( 'Payment Confirmation Received - Order #%s', 'woo-wise-transfer' ), $order_id );
+		$message = $this->render_receipt_uploaded_email( $data );
 
-		ob_start();
-		?>
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<meta charset="UTF-8">
-			<style>
-				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7f4; margin: 0; padding: 20px; }
-				.email-wrapper { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-				.email-header { background: #163300; padding: 24px 32px; }
-				.email-header h1 { color: #9FE870; margin: 0; font-size: 20px; font-weight: 600; }
-				.email-body { padding: 32px; }
-				.info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E0E6E0; }
-				.info-label { color: #637381; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-				.info-value { color: #1A1A1A; font-size: 14px; font-weight: 600; }
-				.btn { display: inline-block; background: #163300; color: #9FE870; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 8px; }
-				.btn-secondary { display: inline-block; background: #9FE870; color: #163300; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 8px; margin-left: 8px; }
-				.section { margin-bottom: 24px; }
-				.section-title { font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 12px; }
-			</style>
-		</head>
-		<body>
-			<div class="email-wrapper">
-				<div class="email-header">
-					<h1><?php echo esc_html( $subject ); ?></h1>
-				</div>
-				<div class="email-body">
-					<p style="color: #454745; margin-top: 0;"><?php esc_html_e( 'A customer has uploaded proof of payment for their order. Please review the receipt and confirm the payment.', 'woo-wise-transfer' ); ?></p>
-
-					<div class="section">
-						<div class="section-title"><?php esc_html_e( 'Order Details', 'woo-wise-transfer' ); ?></div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Order ID', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value">#<?php echo esc_html( $order_id ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Customer', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo esc_html( $customer ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Email', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo esc_html( $email ); ?></span>
-						</div>
-						<div class="info-row">
-							<span class="info-label"><?php esc_html_e( 'Total', 'woo-wise-transfer' ); ?></span>
-							<span class="info-value"><?php echo wp_kses_post( $total ); ?></span>
-						</div>
-					</div>
-
-					<div class="section">
-						<div class="section-title"><?php esc_html_e( 'Actions', 'woo-wise-transfer' ); ?></div>
-						<p>
-							<a href="<?php echo esc_url( $admin_url ); ?>" class="btn"><?php esc_html_e( 'View Order', 'woo-wise-transfer' ); ?></a>
-							<a href="<?php echo esc_url( $receipt_url ); ?>" class="btn-secondary"><?php esc_html_e( 'View Receipt', 'woo-wise-transfer' ); ?></a>
-						</p>
-					</div>
-				</div>
-			</div>
-		</body>
-		</html>
-		<?php
-		$message = ob_get_clean();
-
-		$headers = array(
-			'Content-Type: text/html; charset=UTF-8',
-		);
-
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 		wp_mail( $to, $subject, $message, $headers );
 	}
 
