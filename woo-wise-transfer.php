@@ -112,11 +112,11 @@ function woo_wise_transfer_email_link( $order, $sent_to_admin, $plain_text, $ema
 		echo "\n" . esc_html__( 'View your transfer details and upload proof of payment:', 'woo-wise-transfer' ) . "\n" . esc_url( $url ) . "\n\n";
 	} else {
 		$font = "font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;";
-		echo '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 24px;"><tr><td>';
+		// echo '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 24px;"><tr><td>';
 		echo '<a href="' . esc_url( $url ) . '" style="display:inline-block;background:#163300;color:#9FE870;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;' . $font . '">';
 		echo esc_html__( 'View Transfer Details & Upload Receipt', 'woo-wise-transfer' );
 		echo '</a>';
-		echo '</td></tr></table>';
+		// echo '</td></tr></table>';
 	}
 }
 
