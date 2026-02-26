@@ -431,6 +431,109 @@
 }
 
 /* ============================================
+   VIEW ORDER PAGE
+   ============================================ */
+.wise-view-order-wrapper {
+	font-family: var(--wise-font);
+}
+
+.wise-view-order-wrapper--standalone {
+	background: #f5f7f4;
+	min-height: 100vh;
+	padding: 40px 20px;
+}
+
+.wise-view-order-container {
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.wise-view-order-header {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.wise-view-order-header h1 {
+	font-size: 24px;
+	color: var(--wise-green-dark);
+	margin-bottom: 8px;
+}
+
+.wise-view-order-header p {
+	color: var(--wise-text-secondary);
+	font-size: 14px;
+}
+
+.wise-paid-watermark {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%) rotate(-30deg);
+	font-size: 72px;
+	font-weight: 800;
+	color: rgba(22, 51, 0, 0.15);
+	text-transform: uppercase;
+	letter-spacing: 20px;
+	pointer-events: none;
+	white-space: nowrap;
+	z-index: 1;
+}
+
+.wise-view-order-wrapper .wise-card {
+	position: relative;
+}
+
+.wise-view-order-wrapper .wise-card-header {
+	background: var(--wise-green-dark);
+	padding: 24px 32px;
+}
+
+.wise-view-order-wrapper .wise-card-title {
+	color: #9FE870;
+}
+
+.wise-view-order-wrapper .wise-card-subtitle {
+	color: rgba(255,255,255,0.8);
+}
+
+.wise-view-order-wrapper .wise-details-label {
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.wise-view-order-wrapper .wise-details-row td {
+	padding: 16px 32px;
+}
+
+.wise-view-order-wrapper .wise-details-value {
+	font-size: 15px;
+}
+
+.wise-back-link {
+	display: block;
+	text-align: center;
+	margin-top: 24px;
+	color: var(--wise-green-dark);
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.wise-back-link:hover {
+	text-decoration: underline;
+}
+
+.wise-error {
+	color: #d32f2f;
+	padding: 20px;
+	text-align: center;
+	background: #fce4e4;
+	border-radius: 8px;
+}
+
+/* ============================================
    MOBILE RESPONSIVE
    ============================================ */
 @media (max-width: 600px) {

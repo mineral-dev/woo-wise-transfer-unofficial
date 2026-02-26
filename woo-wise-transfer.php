@@ -3,7 +3,7 @@
  * Plugin Name: Wise Transfer (unofficial)
  * Plugin URI: https://mineral.co.id
  * Description: Unofficial WooCommerce payment gateway for Wise Transfer
- * Version: 0.0.1
+ * Version: 1.0.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * WC requires at least: 6.0
@@ -16,9 +16,21 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WOO_WISE_TRANSFER_VERSION', '0.0.1' );
+define( 'WOO_WISE_TRANSFER_VERSION', '1.0.0' );
 define( 'WOO_WISE_TRANSFER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WOO_WISE_TRANSFER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Flush rewrite rules on version upgrade.
+ */
+function woo_wise_transfer_check_version() {
+	$saved_version = get_option( 'wise_version', '0' );
+	if ( version_compare( WOO_WISE_TRANSFER_VERSION, $saved_version, '>' ) ) {
+		update_option( 'wise_version', WOO_WISE_TRANSFER_VERSION );
+		flush_rewrite_rules();
+	}
+}
+add_action( 'admin_init', 'woo_wise_transfer_check_version' );
 
 /**
  * Initialize the plugin after WooCommerce is loaded.
@@ -80,6 +92,87 @@ function woo_wise_transfer_load_textdomain() {
 add_action( 'init', 'woo_wise_transfer_load_textdomain' );
 
 /**
+ * Register rewrite rule for native /wise-transfer-details/ page.
+ */
+function woo_wise_transfer_add_rewrite_rule() {
+	add_rewrite_rule( '^wise-transfer-details/(\d+)/?$', 'index.php?wise_order_view=1&wise_order_id=$matches[1]', 'top' );
+}
+add_action( 'init', 'woo_wise_transfer_add_rewrite_rule' );
+
+/**
+ * Register query vars.
+ */
+function woo_wise_transfer_register_query_vars( $vars ) {
+	$vars[] = 'wise_order_view';
+	$vars[] = 'wise_order_id';
+	return $vars;
+}
+add_filter( 'query_vars', 'woo_wise_transfer_register_query_vars' );
+
+/**
+ * Handle native page request.
+ */
+function woo_wise_transfer_native_page() {
+	global $wp_query;
+
+	$order_id = $wp_query->get( 'wise_order_id' );
+
+	// Check if this is our custom URL
+	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+	if ( preg_match( '#^/wise-transfer-details/(\d+)/?(\?.*)?$#', $request_uri, $matches ) ) {
+		$order_id = absint( $matches[1] );
+		$order    = wc_get_order( $order_id );
+
+		if ( ! $order ) {
+			wp_die( esc_html__( 'Order not found.', 'woo-wise-transfer' ) );
+		}
+
+		// Only allow viewing Wise Transfer orders
+		if ( 'wise_transfer' !== $order->get_payment_method() ) {
+			wp_die( esc_html__( 'This order was not paid via Wise Transfer.', 'woo-wise-transfer' ) );
+		}
+
+		// Check permissions
+		$current_user_id = get_current_user_id();
+		$order_user_id   = $order->get_user_id();
+		$order_key       = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+		$is_admin        = current_user_can( 'manage_woocommerce' );
+		$is_owner        = $current_user_id && $current_user_id === $order_user_id;
+		$has_valid_key   = $order_key && $order->get_order_key() === $order_key;
+
+		if ( ! $is_owner && ! $is_admin && ! $has_valid_key ) {
+			wp_die( esc_html__( 'You do not have permission to view this order.', 'woo-wise-transfer' ) );
+		}
+
+		// Enqueue styles and scripts
+		wp_enqueue_style( 'woo-wise-transfer-checkout' );
+		wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button.js', array(), WOO_WISE_TRANSFER_VERSION, true );
+
+		// Load template file
+		$template_path = WOO_WISE_TRANSFER_PLUGIN_DIR . 'templates/view-order.php';
+		if ( file_exists( $template_path ) ) {
+			include $template_path;
+		} else {
+			// Fallback inline render
+			header( 'Content-Type: text/html; charset=' . get_bloginfo( 'charset' ) );
+			echo '<!DOCTYPE html><html ';
+			echo language_attributes();
+			echo '><head>';
+			echo '<meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '">';
+			echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+			echo '<title>' . sprintf( esc_html__( 'Order #%s Details', 'woo-wise-transfer' ), $order->get_id() ) . '</title>';
+			wp_head();
+			echo '</head><body>';
+			echo woo_wise_transfer_render_view_order_page_html( $order );
+			wp_footer();
+			echo '</body></html>';
+		}
+		exit;
+	}
+}
+add_action( 'template_redirect', 'woo_wise_transfer_native_page', 5 );
+
+/**
  * Create the receipts upload directory on activation.
  */
 function woo_wise_transfer_activate() {
@@ -91,6 +184,9 @@ function woo_wise_transfer_activate() {
 		// Protect directory with .htaccess
 		file_put_contents( $receipts_dir . '/.htaccess', 'Options -Indexes' . PHP_EOL );
 	}
+
+	// Flush rewrite rules for view-order endpoint
+	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'woo_wise_transfer_activate' );
 
@@ -122,3 +218,101 @@ function woo_wise_transfer_plugin_row_meta( $links, $file ) {
 	return $links;
 }
 add_filter( 'plugin_row_meta', 'woo_wise_transfer_plugin_row_meta', 10, 2 );
+
+/**
+ * Flush rewrite rules on activation.
+ */
+function woo_wise_transfer_activate_rewrite() {
+	woo_wise_transfer_add_rewrite_rule();
+	flush_rewrite_rules();
+}
+register_activation_hook( __FILE__, 'woo_wise_transfer_activate_rewrite' );
+
+/**
+ * Shortcode: [wise_order_details order_id="123"]
+ * Usage: Create a page and add this shortcode with the order ID
+ * Or use [wise_order_details] to display current user's order by ID from URL parameter ?order_id=123
+ * Optional: ?key=wc_order_xxx for guest access
+ */
+function woo_wise_transfer_shortcode( $atts ) {
+	$atts = shortcode_atts( array(
+		'order_id' => '',
+	), $atts, 'wise_order_details' );
+
+	$order_id = ! empty( $atts['order_id'] ) ? absint( $atts['order_id'] ) : 0;
+
+	// Also check for order_id in URL query string
+	if ( ! $order_id && isset( $_GET['order_id'] ) ) {
+		$order_id = absint( $_GET['order_id'] );
+	}
+
+	if ( ! $order_id ) {
+		return '<p class="wise-error">' . esc_html__( 'Order ID is required.', 'woo-wise-transfer' ) . '</p>';
+	}
+
+	$order = wc_get_order( $order_id );
+
+	if ( ! $order ) {
+		return '<p class="wise-error">' . esc_html__( 'Order not found.', 'woo-wise-transfer' ) . '</p>';
+	}
+
+	// Only allow viewing Wise Transfer orders
+	if ( 'wise_transfer' !== $order->get_payment_method() ) {
+		return '<p class="wise-error">' . esc_html__( 'This order was not paid via Wise Transfer.', 'woo-wise-transfer' ) . '</p>';
+	}
+
+	// Check permissions: logged-in user owns order, OR admin, OR has valid order key (for guests)
+	$current_user_id = get_current_user_id();
+	$order_user_id   = $order->get_user_id();
+	$order_key       = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+	$is_admin        = current_user_can( 'manage_woocommerce' );
+	$is_owner        = $current_user_id && $current_user_id === $order_user_id;
+	$has_valid_key  = $order_key && $order->get_order_key() === $order_key;
+
+	if ( ! $is_owner && ! $is_admin && ! $has_valid_key ) {
+		return '<p class="wise-error">' . esc_html__( 'You do not have permission to view this order.', 'woo-wise-transfer' ) . '</p>';
+	}
+
+	// Enqueue styles
+	wp_enqueue_style( 'woo-wise-transfer-checkout' );
+
+	return woo_wise_transfer_render_view_order_page_html( $order );
+}
+add_shortcode( 'wise_order_details', 'woo_wise_transfer_shortcode' );
+
+/**
+ * Render the view order page HTML (returns string for shortcode).
+ *
+ * @param WC_Order $order Order object.
+ * @return string
+ */
+function woo_wise_transfer_render_view_order_page_html( $order ) {
+	// Get gateway settings for the shared card partial.
+	$gateway          = new Woo_Wise_Transfer_Gateway();
+	$account_email    = $gateway->get_option( 'account_email' );
+	$account_name     = $gateway->get_option( 'account_name' );
+	$bank_name        = $gateway->get_option( 'bank_name' );
+	$account_number   = $gateway->get_option( 'account_number' );
+	$currency         = $gateway->get_option( 'currency' );
+	$swift_code       = $gateway->get_option( 'swift_code' );
+	$receipt_url      = $order->get_meta( '_wise_receipt_url' );
+
+	wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button.js', array(), WOO_WISE_TRANSFER_VERSION, true );
+
+	ob_start();
+	?>
+	<div class="wise-view-order-wrapper">
+		<div class="wise-view-order-container">
+			<div class="wise-view-order-header">
+				<h1><?php printf( esc_html__( 'Order #%s', 'woo-wise-transfer' ), $order->get_id() ); ?></h1>
+				<p><?php echo esc_html( $order->get_date_created()->date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) ); ?></p>
+			</div>
+
+			<?php include WOO_WISE_TRANSFER_PLUGIN_DIR . 'templates/partials/transfer-details-card.php'; ?>
+
+			<a href="<?php echo esc_url( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) ); ?>" class="wise-back-link"><?php esc_html_e( '← Back to My Account', 'woo-wise-transfer' ); ?></a>
+		</div>
+	</div>
+	<?php
+	return ob_get_clean();
+}
