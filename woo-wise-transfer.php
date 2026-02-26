@@ -46,6 +46,12 @@ function woo_wise_transfer_init() {
 	// Register AJAX handlers here so they work even if WC doesn't instantiate gateways during AJAX.
 	add_action( 'wp_ajax_wise_upload_receipt', 'woo_wise_transfer_ajax_upload_receipt' );
 	add_action( 'wp_ajax_nopriv_wise_upload_receipt', 'woo_wise_transfer_ajax_upload_receipt' );
+
+	// Add "Transfer Details" action button on My Account → Orders list.
+	add_filter( 'woocommerce_my_account_my_orders_actions', 'woo_wise_transfer_orders_actions', 10, 2 );
+
+	// Add transfer details link to WooCommerce customer emails.
+	add_action( 'woocommerce_email_before_order_table', 'woo_wise_transfer_email_link', 10, 4 );
 }
 add_action( 'plugins_loaded', 'woo_wise_transfer_init' );
 
@@ -60,6 +66,57 @@ function woo_wise_transfer_ajax_upload_receipt() {
 		// Fallback: instantiate directly.
 		$gateway = new Woo_Wise_Transfer_Gateway();
 		$gateway->ajax_upload_receipt();
+	}
+}
+
+/**
+ * Add a "Transfer Details" action button on the My Account → Orders list for wise_transfer orders.
+ *
+ * @param array    $actions Existing order actions.
+ * @param WC_Order $order   Order object.
+ * @return array
+ */
+function woo_wise_transfer_orders_actions( $actions, $order ) {
+	if ( 'wise_transfer' !== $order->get_payment_method() ) {
+		return $actions;
+	}
+
+	$actions['wise_transfer_details'] = array(
+		'url'  => home_url( '/wise-transfer-details/' . $order->get_id() . '/?key=' . $order->get_order_key() ),
+		'name' => __( 'Transfer Details', 'woo-wise-transfer' ),
+	);
+
+	return $actions;
+}
+
+/**
+ * Add a "View Transfer Details" link to WooCommerce customer emails for wise_transfer orders.
+ *
+ * @param WC_Order $order         Order object.
+ * @param bool     $sent_to_admin Whether email is sent to admin.
+ * @param bool     $plain_text    Whether email is plain text.
+ * @param WC_Email $email         Email object.
+ */
+function woo_wise_transfer_email_link( $order, $sent_to_admin, $plain_text, $email = null ) {
+	if ( $sent_to_admin ) {
+		return;
+	}
+
+	if ( 'wise_transfer' !== $order->get_payment_method() ) {
+		return;
+	}
+
+	$url = home_url( '/wise-transfer-details/' . $order->get_id() . '/?key=' . $order->get_order_key() );
+
+	if ( $plain_text ) {
+		echo "\n" . esc_html__( 'View your transfer details and upload proof of payment:', 'woo-wise-transfer' ) . "\n" . esc_url( $url ) . "\n\n";
+	} else {
+		$font = "font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;";
+		echo '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 24px;"><tr><td>';
+		echo '<a href="' . esc_url( $url ) . '" style="display:inline-block;background:#163300;color:#9FE870;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;' . $font . '">';
+		echo esc_html__( 'View Transfer Details & Upload Receipt', 'woo-wise-transfer' );
+		echo '</a>';
+		echo '</td></tr></table>';
 	}
 }
 
@@ -144,8 +201,8 @@ function woo_wise_transfer_native_page() {
 			wp_die( esc_html__( 'You do not have permission to view this order.', 'woo-wise-transfer' ) );
 		}
 
-		// Enqueue styles and scripts
-		wp_enqueue_style( 'woo-wise-transfer-checkout' );
+		// Enqueue styles and scripts (register with full URL since gateway enqueue may not have fired).
+		wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css', array(), WOO_WISE_TRANSFER_VERSION );
 		wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button.js', array(), WOO_WISE_TRANSFER_VERSION, true );
 
 		// Load template file
@@ -273,8 +330,8 @@ function woo_wise_transfer_shortcode( $atts ) {
 		return '<p class="wise-error">' . esc_html__( 'You do not have permission to view this order.', 'woo-wise-transfer' ) . '</p>';
 	}
 
-	// Enqueue styles
-	wp_enqueue_style( 'woo-wise-transfer-checkout' );
+	// Enqueue styles (register with full URL since gateway enqueue may not have fired).
+	wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css', array(), WOO_WISE_TRANSFER_VERSION );
 
 	return woo_wise_transfer_render_view_order_page_html( $order );
 }

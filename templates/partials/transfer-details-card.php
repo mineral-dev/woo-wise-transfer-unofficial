@@ -2,7 +2,7 @@
 /**
  * Wise Transfer Details Card — reusable partial.
  *
- * Shared between the standalone view-order template and the shortcode/fallback renderer.
+ * Pure account details card. Does NOT include upload form or receipt nudge.
  *
  * Expected variables:
  *   $order          WC_Order  — the order object
@@ -12,12 +12,16 @@
  *   $account_number string
  *   $currency       string
  *   $swift_code     string
- *   $receipt_url    string
+ *
+ * Optional:
+ *   $card_subtitle  string  — override subtitle text
  *
  * @package Woo_Wise_Transfer
  */
 
 defined( 'ABSPATH' ) || exit;
+
+$card_subtitle = isset( $card_subtitle ) ? $card_subtitle : __( 'Please transfer the order amount to the account below.', 'woo-wise-transfer' );
 ?>
 
 <div class="wise-card">
@@ -27,7 +31,7 @@ defined( 'ABSPATH' ) || exit;
 	<div class="wise-card-header">
 		<img src="<?php echo esc_url( WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/images/wise-logo.svg' ); ?>" alt="Wise" class="wise-card-logo">
 		<h3 class="wise-card-title"><?php esc_html_e( 'Transfer Details', 'woo-wise-transfer' ); ?></h3>
-		<p class="wise-card-subtitle"><?php esc_html_e( 'Please transfer the order amount to the account below.', 'woo-wise-transfer' ); ?></p>
+		<p class="wise-card-subtitle"><?php echo esc_html( $card_subtitle ); ?></p>
 	</div>
 
 	<table class="wise-details-table">
@@ -99,27 +103,4 @@ defined( 'ABSPATH' ) || exit;
 			<td class="wise-details-value"><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></td>
 		</tr>
 	</table>
-
-	<?php if ( $receipt_url ) : ?>
-	<?php
-		$receipt_filename = $order->get_meta( '_wise_receipt_filename' );
-		$uploaded_at      = $order->get_meta( '_wise_receipt_uploaded_at' );
-		$is_image         = preg_match( '/\.(jpe?g|png)$/i', $receipt_filename );
-	?>
-	<div class="wise-nudge" style="margin: 24px 32px;">
-		<?php if ( $is_image ) : ?>
-		<img class="wise-nudge-thumb" src="<?php echo esc_url( $receipt_url ); ?>" alt="">
-		<?php else : ?>
-		<span class="wise-nudge-icon">
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-		</span>
-		<?php endif; ?>
-		<div class="wise-nudge-body">
-			<p class="wise-nudge-title"><?php echo esc_html( $receipt_filename ); ?></p>
-			<?php if ( $uploaded_at ) : ?>
-			<p class="wise-nudge-subtitle"><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $uploaded_at ) ) ); ?></p>
-			<?php endif; ?>
-		</div>
-	</div>
-	<?php endif; ?>
 </div>
