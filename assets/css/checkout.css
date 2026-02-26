@@ -430,6 +430,48 @@
 	margin: 0;
 }
 
+/* Upload confirmation — Wise Alert / Nudge */
+.wise-alert {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	border-radius: var(--wise-radius-card);
+	padding: 20px;
+	margin-top: 16px;
+	font-family: var(--wise-font);
+}
+
+.wise-alert--success {
+	background: rgba(159, 232, 112, 0.16);
+}
+
+.wise-alert-icon {
+	flex-shrink: 0;
+	color: var(--wise-green-dark);
+	line-height: 0;
+}
+
+.wise-alert-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.wise-alert-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--wise-green-dark);
+	margin: 0 0 4px;
+	line-height: 1.4;
+}
+
+.wise-alert-text {
+	font-size: 14px;
+	font-weight: 400;
+	color: var(--wise-text-secondary);
+	line-height: 1.5;
+	margin: 0;
+}
+
 /* ============================================
    DIVIDER
    ============================================ */

@@ -149,6 +149,47 @@ function woo_wise_transfer_load_textdomain() {
 add_action( 'init', 'woo_wise_transfer_load_textdomain' );
 
 /**
+ * Register custom order status: Proof Uploaded.
+ */
+function woo_wise_transfer_register_order_status() {
+	register_post_status( 'wc-wise-uploaded', array(
+		'label'                     => _x( 'Proof Uploaded', 'Order status', 'woo-wise-transfer' ),
+		'public'                    => true,
+		'exclude_from_search'       => false,
+		'show_in_admin_all_list'    => true,
+		'show_in_admin_status_list' => true,
+		/* translators: %s: number of orders */
+		'label_count'               => _n_noop( 'Proof Uploaded <span class="count">(%s)</span>', 'Proof Uploaded <span class="count">(%s)</span>', 'woo-wise-transfer' ),
+	) );
+}
+add_action( 'init', 'woo_wise_transfer_register_order_status' );
+
+/**
+ * Add the custom status to WooCommerce order status list.
+ *
+ * @param array $statuses Existing statuses.
+ * @return array
+ */
+function woo_wise_transfer_add_order_status( $statuses ) {
+	$statuses['wc-wise-uploaded'] = _x( 'Proof Uploaded', 'Order status', 'woo-wise-transfer' );
+	return $statuses;
+}
+add_filter( 'wc_order_statuses', 'woo_wise_transfer_add_order_status' );
+
+/**
+ * Style the custom status badge in the admin order list.
+ */
+function woo_wise_transfer_order_status_style() {
+	echo '<style>
+		.order-status.status-wise-uploaded {
+			background: #D6E4F0;
+			color: #1A3E5C;
+		}
+	</style>';
+}
+add_action( 'admin_head', 'woo_wise_transfer_order_status_style' );
+
+/**
  * Register rewrite rule for native /wise-transfer-details/ page.
  */
 function woo_wise_transfer_add_rewrite_rule() {

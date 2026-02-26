@@ -37,6 +37,15 @@ $order_id = $order->get_id();
 			<?php endif; ?>
 		</div>
 	</div>
+	<div class="wise-alert wise-alert--success">
+		<span class="wise-alert-icon">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+		</span>
+		<div class="wise-alert-body">
+			<p class="wise-alert-title"><?php esc_html_e( 'Payment proof received', 'woo-wise-transfer' ); ?></p>
+			<p class="wise-alert-text"><?php esc_html_e( 'Our team will review your payment and process your order shortly. You will receive an email once your payment has been confirmed.', 'woo-wise-transfer' ); ?></p>
+		</div>
+	</div>
 </div>
 <?php else : ?>
 <div class="wise-upload-card">

@@ -457,6 +457,7 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 		$order->update_meta_data( '_wise_receipt_filename', sanitize_file_name( $_FILES['wise_receipt']['name'] ) );
 		$order->update_meta_data( '_wise_receipt_uploaded_at', $uploaded_at );
 		$order->add_order_note( __( 'Customer uploaded proof of payment.', 'woo-wise-transfer' ) );
+		$order->set_status( 'wise-uploaded', __( 'Proof of payment uploaded by customer.', 'woo-wise-transfer' ) );
 		$order->save();
 
 		// Notify admin about the uploaded receipt.
