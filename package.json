@@ -1,0 +1,19 @@
+{
+  "name": "woo-wise-transfer-unofficial",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unofficial WooCommerce payment gateway for Wise Transfer",
+  "scripts": {
+    "minify:css": "cleancss -o assets/css/checkout.min.css assets/css/checkout.css && cleancss -o assets/css/admin.min.css assets/css/admin.css",
+    "minify:js": "terser assets/js/checkout.js -o assets/js/checkout.min.js -c -m && terser assets/js/copy-button.js -o assets/js/copy-button.min.js -c -m",
+    "minify": "pnpm minify:css && pnpm minify:js",
+    "zip": "node scripts/zip.mjs",
+    "version:sync": "node scripts/version-sync.mjs",
+    "build": "pnpm version:sync && pnpm minify && pnpm zip"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "clean-css-cli": "^5.6.3",
+    "terser": "^5.37.0"
+  }
+}

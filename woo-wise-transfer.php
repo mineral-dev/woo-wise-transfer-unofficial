@@ -19,6 +19,7 @@ defined( 'ABSPATH' ) || exit;
 define( 'WOO_WISE_TRANSFER_VERSION', '1.0.0' );
 define( 'WOO_WISE_TRANSFER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WOO_WISE_TRANSFER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'WOO_WISE_TRANSFER_ASSET_SUFFIX', defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min' );
 
 /**
  * Flush rewrite rules on version upgrade.
@@ -263,8 +264,8 @@ function woo_wise_transfer_native_page() {
 		}
 
 		// Enqueue styles and scripts (register with full URL since gateway enqueue may not have fired).
-		wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css', array(), WOO_WISE_TRANSFER_VERSION );
-		wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button.js', array(), WOO_WISE_TRANSFER_VERSION, true );
+		wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.css', array(), WOO_WISE_TRANSFER_VERSION );
+		wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.js', array(), WOO_WISE_TRANSFER_VERSION, true );
 
 		// Load template file
 		$template_path = WOO_WISE_TRANSFER_PLUGIN_DIR . 'templates/view-order.php';
@@ -392,7 +393,7 @@ function woo_wise_transfer_shortcode( $atts ) {
 	}
 
 	// Enqueue styles (register with full URL since gateway enqueue may not have fired).
-	wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css', array(), WOO_WISE_TRANSFER_VERSION );
+	wp_enqueue_style( 'woo-wise-transfer-checkout', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.css', array(), WOO_WISE_TRANSFER_VERSION );
 
 	return woo_wise_transfer_render_view_order_page_html( $order );
 }
@@ -415,7 +416,7 @@ function woo_wise_transfer_render_view_order_page_html( $order ) {
 	$swift_code       = $gateway->get_option( 'swift_code' );
 	$receipt_url      = $order->get_meta( '_wise_receipt_url' );
 
-	wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button.js', array(), WOO_WISE_TRANSFER_VERSION, true );
+	wp_enqueue_script( 'woo-wise-transfer-copy-button', WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/copy-button' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.js', array(), WOO_WISE_TRANSFER_VERSION, true );
 
 	ob_start();
 	?>

@@ -295,14 +295,14 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 
 		wp_enqueue_style(
 			'woo-wise-transfer-checkout',
-			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css',
+			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.css',
 			array(),
 			WOO_WISE_TRANSFER_VERSION
 		);
 
 		wp_enqueue_script(
 			'woo-wise-transfer-checkout',
-			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/checkout.js',
+			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/js/checkout' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.js',
 			array( 'jquery' ),
 			WOO_WISE_TRANSFER_VERSION,
 			true
@@ -337,7 +337,7 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 
 		wp_enqueue_style(
 			'woo-wise-transfer-admin',
-			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/admin.css',
+			WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/admin' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.css',
 			array(),
 			WOO_WISE_TRANSFER_VERSION
 		);
@@ -790,7 +790,7 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 		if ( ! wp_style_is( 'woo-wise-transfer-checkout', 'enqueued' ) ) {
 			wp_enqueue_style(
 				'woo-wise-transfer-checkout',
-				WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout.css',
+				WOO_WISE_TRANSFER_PLUGIN_URL . 'assets/css/checkout' . WOO_WISE_TRANSFER_ASSET_SUFFIX . '.css',
 				array(),
 				WOO_WISE_TRANSFER_VERSION
 			);
