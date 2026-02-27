@@ -551,7 +551,7 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 		}
 
 		/* translators: %s: order ID */
-		$subject = sprintf( __( 'New Wise Transfer Payment - Order #%s', 'woo-wise-transfer' ), $data['order_id'] );
+		$subject = sprintf( __( 'Orders Awaiting Transfer Confirmation #%s', 'woo-wise-transfer' ), $data['order_id'] );
 
 		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>';
 		$html .= '<body style="margin:0;padding:20px;background:#f5f7f4;' . $font . '">';
@@ -726,7 +726,7 @@ class Woo_Wise_Transfer_Gateway extends WC_Payment_Gateway {
 		);
 
 		/* translators: %s: order ID */
-		$subject = sprintf( __( 'New Wise Transfer Payment - Order #%s', 'woo-wise-transfer' ), $order_id );
+		$subject = sprintf( __( 'Orders Awaiting Transfer Confirmation #%s', 'woo-wise-transfer' ), $order_id );
 		$message = $this->render_order_placed_email( $data );
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
