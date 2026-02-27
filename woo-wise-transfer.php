@@ -52,6 +52,9 @@ function woo_wise_transfer_init() {
 
 	// Add transfer details link to WooCommerce customer emails.
 	add_action( 'woocommerce_email_before_order_table', 'woo_wise_transfer_email_link', 10, 4 );
+
+	// Suppress default WooCommerce admin emails for Wise Transfer orders.
+	add_filter( 'woocommerce_email_enabled_new_order', 'woo_wise_transfer_suppress_admin_email', 10, 2 );
 }
 add_action( 'plugins_loaded', 'woo_wise_transfer_init' );
 
@@ -118,6 +121,23 @@ function woo_wise_transfer_email_link( $order, $sent_to_admin, $plain_text, $ema
 		echo '</a>';
 		// echo '</td></tr></table>';
 	}
+}
+
+/**
+ * Suppress default WooCommerce admin "New Order" email for Wise Transfer orders.
+ *
+ * The plugin sends its own custom notification email to the admin,
+ * so the default WooCommerce email is redundant.
+ *
+ * @param bool     $enabled Whether the email is enabled.
+ * @param WC_Order $order   Order object (may be null).
+ * @return bool
+ */
+function woo_wise_transfer_suppress_admin_email( $enabled, $order ) {
+	if ( $order instanceof WC_Order && 'wise_transfer' === $order->get_payment_method() ) {
+		return false;
+	}
+	return $enabled;
 }
 
 /**
